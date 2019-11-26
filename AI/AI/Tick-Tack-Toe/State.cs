@@ -14,7 +14,7 @@ namespace AI.Tick_Tack_Toe
             Initialise();
         }
 
-        public State(char[][] board)
+        public State(char[][] board, int depth)
         {
             this.board = new char[3][];
             for (int i = 0; i < 3; i++)
@@ -25,7 +25,7 @@ namespace AI.Tick_Tack_Toe
                     this.board[i][k] = board[i][k];
                 }
             }
-            depth = 0;
+            this.depth = depth;
         }
 
         public void SetBoard(char[][] board)
@@ -65,10 +65,10 @@ namespace AI.Tick_Tack_Toe
 
         public bool IsFinished()
         {
-            if (Evaluate() == -10 || Evaluate() == 10)
-            {
-                return true;
-            }
+            //if (Evaluate() == -10 || Evaluate() == 10)
+            //{
+            //    return true;
+            //}
 
             foreach (char[] row in board)
             {
@@ -83,17 +83,9 @@ namespace AI.Tick_Tack_Toe
             return true;
         }
 
-        public int Evaluate()
-        {
-            if (isGameWon(Player.O))
-                return 10 - depth;
-            else if (isGameWon(Player.X))
-                return depth - 10;
-            else
-                return 0;
-        }
 
-        bool isGameWon(char pl)
+
+        public bool isGameWon(char pl)
         {
             // Check rows
             for (int row = 0; row < 3; row++)

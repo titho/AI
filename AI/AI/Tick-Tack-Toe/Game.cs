@@ -20,19 +20,14 @@ namespace AI.Tick_Tack_Toe
             minPlayer = isComputerFirst == 'H' ? Player.X : Player.O;
         }
 
-        public void Play(char first)
+        public void Play()
         {
-            //state.board = new char[,]
-            //{
-            //    {'X', 'O', 'X' },
-            //    {'X', 'O', '_' },
-            //    {'O', '_', '_' },
-            //};
-
-
-            while (true)
+            while (!state.IsFinished())
             {
+                // Print state
                 state.Print();
+
+                // Let computer start first once
                 if (isComputerFirst)
                 {
                     state = MakeBestMove();
@@ -43,15 +38,23 @@ namespace AI.Tick_Tack_Toe
                     // Humanoid makes decision
                     var input = Console.ReadLine().Split(' ');
 
+                    if (input[0] == "R")
+                    {
+                        state = new State();
+                        isComputerFirst = maxPlayer == 'X' ? true : false;
+                        Play();
+                    }
+
                     int[] numbers = Array.ConvertAll(input, int.Parse);
 
                     int i = 0;
                     int j = 0;
 
+                    // Check number of inputs
                     if (numbers.Length != 2)
                     {
                         Console.WriteLine("Bad input!");
-                        Play(first);
+                        Play();
                         break;
                     }
                     else
@@ -59,42 +62,64 @@ namespace AI.Tick_Tack_Toe
                         i = numbers[0];
                         j = numbers[1];
 
+                        i--;
+                        j--;
+
+                        // Check in board dimension
                         if (i >= 3 || i < 0 || j >= 3 || j < 0)
                         {
                             Console.WriteLine("Bad input!");
-                            Play(first);
+                            Play();
                             break;
                         }
+                        // Check if it ain empty
                         else if (state.board[i][j] != Player.Empty)
                         {
                             Console.WriteLine("Bad input!");
-                            Play(first);
+                            Play();
                             break;
                         }
                     }
 
+                    // Okay, go for it
+
                     state.board[i][j] = minPlayer;
 
+                    // Did you beat me or are we draw?
                     if (state.IsFinished())
                     {
                         break;
                     }
 
+                    // Let me try.
                     // Computero makes decision
                     state = MakeBestMove();
 
-                    if (state.IsFinished())
-                    {
-                        break;
-                    }
+                    //// Did I beat you or are we draw?
+                    //if (state.IsFinished())
+                    //{
+                    //    break;
+                    //}
                 }
+            }
+            state.depth = 0;
+            if (Evaluate(state) == -10)
+            {
+                Console.WriteLine("Computero is glorious!");
+            }
+            else if (Evaluate(state) == 10)
+            {
+                Console.WriteLine("Humanity survives!");
+            }
+            else
+            {
+                Console.WriteLine("Draw!");
             }
             state.Print();
         }
 
         State MakeBestMove()
         {
-            State bestState = new State();
             List<char[][]> boards = new List<char[][]>();
             List<int> results = new List<int>();
             int bestVal = Int32.MinValue;
@@ -115,8 +140,8 @@ namespace AI.Tick_Tack_Toe
                         }
 
                         boards.Add(board);
-                        var newState = new State(board);
-                        int result = Minimax(newState, 0, !isComputerFirst);
+                        var newState = new State(board, 0);
+                        int result = Minimax(newState, 0, false);
 
                         results.Add(result);
 
@@ -132,18 +157,28 @@ namespace AI.Tick_Tack_Toe
             }
             int maxIndex = results.IndexOf(results.Max());
             var bestBoard = boards[maxIndex];
-            bestState.board = bestBoard;
+
+            State bestState = new State(bestBoard, 0);
 
             return bestState;
         }
 
+        public int Evaluate(State state)
+        {
+            if (state.isGameWon(maxPlayer))
+                return 10 - state.depth;
+            else if (state.isGameWon(minPlayer))
+                return state.depth - 10;
+            else
+                return 0;
+        }
+
         int Minimax(State state, int depth, bool isMaximizingPlayer)
         {
-            state = new State(state.board);
+            state = new State(state.board, depth);
+            int score = Evaluate(state);
 
-            int score = state.Evaluate();
-
-            if (score == 10 || score == -10)
+            if (score != 0)
                 return score;
             if (state.IsFinished())
                 return 0;
@@ -161,9 +196,8 @@ namespace AI.Tick_Tack_Toe
                         if (cell == Player.Empty)
                         {
                             state.board[i][j] = maxPlayer;
-                            state.depth += 1;
 
-                            int value = Minimax(state, depth + 1, false);/**/
+                            int value = Minimax(state, depth + 1, false);
 
                             bestVal = Math.Max(bestVal, value);
 
@@ -186,7 +220,6 @@ namespace AI.Tick_Tack_Toe
                         if (cell == Player.Empty)
                         {
                             state.board[i][j] = minPlayer;
-                            state.depth += 1;
 
                             int value = Minimax(state, depth + 1, true);
 
