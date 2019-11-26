@@ -11,118 +11,20 @@ namespace AI.Tick_Tack_Toe
         char maxPlayer;
         char minPlayer;
 
-        public Game(char isComputerFirst)
+        public Game(char first)
         {
             state = new State();
-            this.isComputerFirst = isComputerFirst == 'H' ? false : true;
+            isComputerFirst = first == 'H' ? false : true;
 
-            maxPlayer = isComputerFirst == 'H' ? Player.O : Player.X;
-            minPlayer = isComputerFirst == 'H' ? Player.X : Player.O;
+            maxPlayer = isComputerFirst ? 'X' : 'O';
+            minPlayer = !isComputerFirst ? 'X' : 'O';
         }
 
-        public void Play()
-        {
-            while (!state.IsFinished())
-            {
-                // Print state
-                state.Print();
-
-                // Let computer start first once
-                if (isComputerFirst)
-                {
-                    state = MakeBestMove();
-                    isComputerFirst = false;
-                }
-                else
-                {
-                    // Humanoid makes decision
-                    var input = Console.ReadLine().Split(' ');
-
-                    if (input[0] == "R")
-                    {
-                        state = new State();
-                        isComputerFirst = maxPlayer == 'X' ? true : false;
-                        Play();
-                    }
-
-                    int[] numbers = Array.ConvertAll(input, int.Parse);
-
-                    int i = 0;
-                    int j = 0;
-
-                    // Check number of inputs
-                    if (numbers.Length != 2)
-                    {
-                        Console.WriteLine("Bad input!");
-                        Play();
-                        break;
-                    }
-                    else
-                    {
-                        i = numbers[0];
-                        j = numbers[1];
-
-                        i--;
-                        j--;
-
-                        // Check in board dimension
-                        if (i >= 3 || i < 0 || j >= 3 || j < 0)
-                        {
-                            Console.WriteLine("Bad input!");
-                            Play();
-                            break;
-                        }
-                        // Check if it ain empty
-                        else if (state.board[i][j] != Player.Empty)
-                        {
-                            Console.WriteLine("Bad input!");
-                            Play();
-                            break;
-                        }
-                    }
-
-                    // Okay, go for it
-
-                    state.board[i][j] = minPlayer;
-
-                    // Did you beat me or are we draw?
-                    if (state.IsFinished())
-                    {
-                        break;
-                    }
-
-                    // Let me try.
-                    // Computero makes decision
-                    state = MakeBestMove();
-
-                    //// Did I beat you or are we draw?
-                    //if (state.IsFinished())
-                    //{
-                    //    break;
-                    //}
-                }
-            }
-            state.depth = 0;
-            if (Evaluate(state) == -10)
-            {
-                Console.WriteLine("Computero is glorious!");
-            }
-            else if (Evaluate(state) == 10)
-            {
-                Console.WriteLine("Humanity survives!");
-            }
-            else
-            {
-                Console.WriteLine("Draw!");
-            }
-            state.Print();
-        }
-
-        State MakeBestMove()
+        private State MakeBestMove()
         {
             List<char[][]> boards = new List<char[][]>();
             List<int> results = new List<int>();
-            int bestVal = Int32.MinValue;
+
 
             for (int i = 0; i < 3; i++)
             {
@@ -140,21 +42,18 @@ namespace AI.Tick_Tack_Toe
                         }
 
                         boards.Add(board);
-                        var newState = new State(board, 0);
-                        int result = Minimax(newState, 0, false);
+
+                        var tempState = new State(board, 0);
+
+                        int result = Minimax(tempState, 0, false);
 
                         results.Add(result);
-
-
-                        if (result > bestVal)
-                        {
-                            bestVal = result;
-                        }
 
                         state.board[i][j] = Player.Empty;
                     }
                 }
             }
+
             int maxIndex = results.IndexOf(results.Max());
             var bestBoard = boards[maxIndex];
 
@@ -163,7 +62,28 @@ namespace AI.Tick_Tack_Toe
             return bestState;
         }
 
-        public int Evaluate(State state)
+
+        private void Conclusion(State state)
+        {
+            state.depth = 0;
+
+            state.Print();
+
+            if (Evaluate(state) == -10)
+            {
+                Console.WriteLine("Humanity survives!");
+            }
+            else if (Evaluate(state) == 10)
+            {
+                Console.WriteLine("Computero is glorious!");
+            }
+            else
+            {
+                Console.WriteLine("Draw!");
+            }
+        }
+
+        private int Evaluate(State state)
         {
             if (state.isGameWon(maxPlayer))
                 return 10 - state.depth;
@@ -173,14 +93,14 @@ namespace AI.Tick_Tack_Toe
                 return 0;
         }
 
-        int Minimax(State state, int depth, bool isMaximizingPlayer)
+        private int Minimax(State state, int depth, bool isMaximizingPlayer)
         {
             state = new State(state.board, depth);
             int score = Evaluate(state);
 
             if (score != 0)
                 return score;
-            if (state.IsFinished())
+            if (state.IsGameFinished())
                 return 0;
 
             if (isMaximizingPlayer)
@@ -230,6 +150,103 @@ namespace AI.Tick_Tack_Toe
                     }
                 }
                 return bestVal;
+            }
+        }
+
+        private int[] CheckInput()
+        {
+            var input = Console.ReadLine().Split(' ');
+
+            // Check if its a request for a restart
+            if (input[0] == "R")
+            {
+                state = new State();
+                isComputerFirst = maxPlayer == 'X' ? true : false;
+                return new int[] { -1, -1 };
+            }
+
+            int[] numbers = Array.ConvertAll(input, int.Parse);
+
+
+            // Check number of inputs
+            if (numbers.Length != 2)
+            {
+                Console.WriteLine("Bad input!");
+                return new int[] { -1, -1 };
+            }
+            else
+            {
+                int i = numbers[0];
+                int j = numbers[1];
+
+                // Normalize
+                i--;
+                j--;
+
+                // Check in board dimension
+                if (i >= 3 || i < 0 || j >= 3 || j < 0)
+                {
+                    Console.WriteLine("Bad input!");
+                    return new int[] { -1, -1 };
+                }
+                // Check if it ain empty
+                else if (state.board[i][j] != Player.Empty)
+                {
+                    Console.WriteLine("Bad input!");
+                    return new int[] { -1, -1 };
+                }
+                return new int[] { i, j };
+            }
+        }
+
+        public void Play()
+        {
+            while (!state.IsGameFinished())
+            {
+                // Print state
+                state.Print();
+
+                // Let computer start first once
+                if (isComputerFirst)
+                {
+                    state = MakeBestMove();
+                    isComputerFirst = false;
+                }
+                else
+                {
+                    // Humanoid makes decision
+                    var checker = CheckInput();
+
+                    int i = checker[0];
+                    int j = checker[1];
+
+                    if (i == -1)
+                    {
+                        Play();
+                        break;
+                    }
+
+                    state.board[i][j] = minPlayer;
+
+                    // Did you beat me or are we draw?
+                    if (state.IsGameFinished())
+                    {
+                        Conclusion(state);
+                        break;
+                    }
+
+                    // Let me try.
+                    // Computero makes decision
+                    state = MakeBestMove();
+
+
+                    // Did you beat me or are we draw?
+                    if (state.IsGameFinished())
+                    {
+                        Conclusion(state);
+                        break;
+                    }
+                }
             }
         }
     }

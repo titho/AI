@@ -28,11 +28,6 @@ namespace AI.Tick_Tack_Toe
             this.depth = depth;
         }
 
-        public void SetBoard(char[][] board)
-        {
-            this.board = (char[][])board.Clone();
-        }
-
         private void Initialise()
         {
             for (int i = 0; i < 3; i++)
@@ -63,13 +58,10 @@ namespace AI.Tick_Tack_Toe
 
         }
 
-        public bool IsFinished()
+        public bool IsGameFinished()
         {
-            //if (Evaluate() == -10 || Evaluate() == 10)
-            //{
-            //    return true;
-            //}
-
+            if (isGameWon(Player.X) || isGameWon(Player.O))
+                return true;
             foreach (char[] row in board)
             {
                 foreach (var position in row)
