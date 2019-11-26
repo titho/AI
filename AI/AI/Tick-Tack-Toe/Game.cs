@@ -7,13 +7,20 @@ namespace AI.Tick_Tack_Toe
     public class Game
     {
         State state;
+        bool isComputerFirst;
+        char maxPlayer;
+        char minPlayer;
 
-        public Game()
+        public Game(char isComputerFirst)
         {
             state = new State();
+            this.isComputerFirst = isComputerFirst == 'H' ? false : true;
+
+            maxPlayer = isComputerFirst == 'H' ? Player.O : Player.X;
+            minPlayer = isComputerFirst == 'H' ? Player.X : Player.O;
         }
 
-        public void Play()
+        public void Play(char first)
         {
             //state.board = new char[,]
             //{
@@ -26,53 +33,60 @@ namespace AI.Tick_Tack_Toe
             while (true)
             {
                 state.Print();
-
-                // Humanoid makes decision
-                var input = Console.ReadLine().Split(' ');
-
-                int[] numbers = Array.ConvertAll(input, int.Parse);
-
-                int i = 0;
-                int j = 0;
-
-                if (numbers.Length != 2)
+                if (isComputerFirst)
                 {
-                    Console.WriteLine("Bad input!");
-                    Play();
-                    break;
+                    state = MakeBestMove();
+                    isComputerFirst = false;
                 }
                 else
                 {
-                    i = numbers[0];
-                    j = numbers[1];
+                    // Humanoid makes decision
+                    var input = Console.ReadLine().Split(' ');
 
-                    if (i >= 3 || i < 0 || j >= 3 || j < 0)
+                    int[] numbers = Array.ConvertAll(input, int.Parse);
+
+                    int i = 0;
+                    int j = 0;
+
+                    if (numbers.Length != 2)
                     {
                         Console.WriteLine("Bad input!");
-                        Play();
+                        Play(first);
                         break;
                     }
-                    else if (state.board[i][j] != Player.Empty)
+                    else
                     {
-                        Console.WriteLine("Bad input!");
-                        Play();
+                        i = numbers[0];
+                        j = numbers[1];
+
+                        if (i >= 3 || i < 0 || j >= 3 || j < 0)
+                        {
+                            Console.WriteLine("Bad input!");
+                            Play(first);
+                            break;
+                        }
+                        else if (state.board[i][j] != Player.Empty)
+                        {
+                            Console.WriteLine("Bad input!");
+                            Play(first);
+                            break;
+                        }
+                    }
+
+                    state.board[i][j] = minPlayer;
+
+                    if (state.IsFinished())
+                    {
                         break;
                     }
-                }
 
-                state.board[i][j] = Player.X;
+                    // Computero makes decision
+                    state = MakeBestMove();
 
-                if (state.IsFinished())
-                {
-                    break;
-                }
-
-                // Computero makes decision
-                state = MakeBestMove();
-
-                if (state.IsFinished())
-                {
-                    break;
+                    if (state.IsFinished())
+                    {
+                        break;
+                    }
                 }
             }
             state.Print();
@@ -91,7 +105,7 @@ namespace AI.Tick_Tack_Toe
                 {
                     if (state.board[i][j] == Player.Empty)
                     {
-                        state.board[i][j] = Player.O;
+                        state.board[i][j] = maxPlayer;
 
                         var board = new char[3][];
 
@@ -102,8 +116,8 @@ namespace AI.Tick_Tack_Toe
 
                         boards.Add(board);
                         var newState = new State(board);
-                        int result = Minimax(newState, 0, false);
-                        
+                        int result = Minimax(newState, 0, !isComputerFirst);
+
                         results.Add(result);
 
 
@@ -146,7 +160,7 @@ namespace AI.Tick_Tack_Toe
 
                         if (cell == Player.Empty)
                         {
-                            state.board[i][j] = Player.O;
+                            state.board[i][j] = maxPlayer;
                             state.depth += 1;
 
                             int value = Minimax(state, depth + 1, false);/**/
@@ -171,7 +185,7 @@ namespace AI.Tick_Tack_Toe
 
                         if (cell == Player.Empty)
                         {
-                            state.board[i][j] = Player.X;
+                            state.board[i][j] = minPlayer;
                             state.depth += 1;
 
                             int value = Minimax(state, depth + 1, true);
